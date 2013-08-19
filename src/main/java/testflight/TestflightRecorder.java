@@ -13,11 +13,14 @@ import hudson.util.CopyOnWriteList;
 import hudson.util.RunList;
 import hudson.util.Secret;
 import org.apache.commons.collections.Predicate;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import hudson.model.Hudson;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 import net.sf.json.JSONObject;
@@ -139,7 +142,7 @@ public class TestflightRecorder extends Recorder {
     }
     
     @DataBoundConstructor
-    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotes, String buildNotesPath, Boolean appendChangelog, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
+    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotesPath, String buildNotes, Boolean appendChangelog, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
         this.tokenPairName = tokenPairName;
         this.apiToken = apiToken;
         this.teamToken = teamToken;
@@ -267,7 +270,8 @@ public class TestflightRecorder extends Recorder {
         ur.dsymPath = vars.expand(StringUtils.trim(team.getDsymPath()));
         ur.apiToken = vars.expand(Secret.toString(tokenPair.getApiToken()));
         List<Entry> entries = getChangeSetEntriesSinceLastSuccess(build);
-        ur.buildNotes = createBuildNotes(buildNotesPath != null ? vars.expand("$WORKSPACE/"+buildNotesPath) : null, vars.expand(buildNotes), entries);
+        File buildNotesFile = getBuildNotesFile(vars, buildNotesPath);
+        ur.buildNotes = createBuildNotes(buildNotesFile, vars.expand(buildNotes), entries);
         ur.lists = vars.expand(lists);
         ur.notifyTeam = notifyTeam;
         ProxyConfiguration proxy = getProxy();
@@ -279,6 +283,27 @@ public class TestflightRecorder extends Recorder {
         ur.teamToken = vars.expand(Secret.toString(tokenPair.getTeamToken()));
         ur.debug = debug;
         return ur;
+    }
+
+    private File getBuildNotesFile(EnvVars vars, String buildNotesPath) {
+        buildNotesPath = vars.expand(buildNotesPath);
+        File buildNotesFile = new File(buildNotesPath);
+        if(buildNotesFile.exists()) {
+            return buildNotesFile;
+        }
+        else {
+            buildNotesFile = new File(vars.expand("$WORKSPACE"), buildNotesPath);
+            if (buildNotesFile.exists()) {
+                return buildNotesFile;
+            }
+        }
+
+        buildNotesFile = new File(vars.expand("$WORKSPACE"),"BUILD_NOTES");
+        if (buildNotesFile.exists()) {
+            return buildNotesFile;
+        }
+
+        return null;
     }
 
     private List<Entry> getChangeSetEntriesSinceLastSuccess(AbstractBuild<?, ?> build) {
@@ -309,10 +334,16 @@ public class TestflightRecorder extends Recorder {
     }
 
     // Append the changelog if we should and can
-    private String createBuildNotes(String buildNotesPath, String buildNotes, final List<Entry> changeSet) {
-        if(buildNotesPath != null) {
-            File buildNotesFile = new File(buildNotesPath);
-
+    private String createBuildNotes(File buildNotesFile, String buildNotes, final List<Entry> changeSet) {
+        if(buildNotesFile != null) {
+            try {
+                String fileContents = FileUtils.readFileToString(buildNotesFile, "UTF-8");
+                buildNotes = fileContents + "\n\n" + buildNotes;
+            } catch (FileNotFoundException e) {
+                //the file should have been checked if it exists, but if not, just ignore it.
+            } catch (IOException e) {
+                //ignore it
+            }
         }
 
 
