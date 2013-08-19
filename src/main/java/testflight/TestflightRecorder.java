@@ -257,7 +257,8 @@ public class TestflightRecorder extends Recorder {
         ur.filePaths = vars.expand(StringUtils.trim(team.getFilePath()));
         ur.dsymPath = vars.expand(StringUtils.trim(team.getDsymPath()));
         ur.apiToken = vars.expand(Secret.toString(tokenPair.getApiToken()));
-        ur.buildNotes = createBuildNotes(vars.expand(buildNotes), build.getChangeSet());
+        List<Entry> entries = getChangeSetEntriesSinceLastSuccess(build);
+        ur.buildNotes = createBuildNotes(vars.expand(buildNotes), entries);
         ur.lists = vars.expand(lists);
         ur.notifyTeam = notifyTeam;
         ProxyConfiguration proxy = getProxy();
@@ -269,6 +270,20 @@ public class TestflightRecorder extends Recorder {
         ur.teamToken = vars.expand(Secret.toString(tokenPair.getTeamToken()));
         ur.debug = debug;
         return ur;
+    }
+
+    private List<Entry> getChangeSetEntriesSinceLastSuccess(AbstractBuild<?, ?> build) {
+        ArrayList<Entry> entries = new ArrayList<Entry>();
+
+        do {
+            ChangeLogSet<?> changeSet = build.getChangeSet();
+
+            for (Entry entry : changeSet) {
+                entries.add(entry);
+            }
+            build = build.getPreviousBuild();
+        } while (build.getResult().isWorseThan(Result.SUCCESS));
+        return entries;
     }
 
     private ProxyConfiguration getProxy() {
@@ -285,7 +300,7 @@ public class TestflightRecorder extends Recorder {
     }
 
     // Append the changelog if we should and can
-    private String createBuildNotes(String buildNotes, final ChangeLogSet<?> changeSet) {
+    private String createBuildNotes(String buildNotes, final List<Entry> changeSet) {
         if (appendChangelog) {
             StringBuilder stringBuilder = new StringBuilder();
 
@@ -294,7 +309,7 @@ public class TestflightRecorder extends Recorder {
 
             // Then append the changelog
             stringBuilder.append("\n\n")
-                    .append(changeSet.isEmptySet() ? Messages.TestflightRecorder_EmptyChangeSet() : Messages.TestflightRecorder_Changelog())
+                    .append(changeSet.isEmpty() ? Messages.TestflightRecorder_EmptyChangeSet() : Messages.TestflightRecorder_Changelog())
                     .append("\n");
 
             int entryNumber = 1;
