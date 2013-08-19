@@ -73,6 +73,12 @@ public class TestflightRecorder extends Recorder {
         return this.appendChangelog;
     }
 
+    private boolean combineChangelogSinceLastSuccess;
+
+    public boolean getCombineChangelogSinceLastSuccess() {
+        return this.combineChangelogSinceLastSuccess;
+    }
+
     /**
      * Comma- or space-separated list of patterns of files/directories to be archived.
      * The variable hasn't been renamed yet for compatibility reasons
@@ -142,7 +148,7 @@ public class TestflightRecorder extends Recorder {
     }
     
     @DataBoundConstructor
-    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotesPath, String buildNotes, Boolean appendChangelog, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
+    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotesPath, String buildNotes, Boolean appendChangelog, Boolean combineChangelogSinceLastSuccess, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
         this.tokenPairName = tokenPairName;
         this.apiToken = apiToken;
         this.teamToken = teamToken;
@@ -150,6 +156,7 @@ public class TestflightRecorder extends Recorder {
         this.buildNotes = buildNotes;
         this.buildNotesPath = buildNotesPath;
         this.appendChangelog = appendChangelog;
+        this.combineChangelogSinceLastSuccess = combineChangelogSinceLastSuccess;
         this.filePath = filePath;
         this.dsymPath = dsymPath;
         this.replace = replace;
@@ -269,7 +276,7 @@ public class TestflightRecorder extends Recorder {
         ur.filePaths = vars.expand(StringUtils.trim(team.getFilePath()));
         ur.dsymPath = vars.expand(StringUtils.trim(team.getDsymPath()));
         ur.apiToken = vars.expand(Secret.toString(tokenPair.getApiToken()));
-        List<Entry> entries = getChangeSetEntriesSinceLastSuccess(build);
+        List<Entry> entries = combineChangelogSinceLastSuccess ? getChangeSetEntriesSinceLastSuccess(build) : getChangeSetEntries(build);
         File buildNotesFile = getBuildNotesFile(vars, buildNotesPath);
         ur.buildNotes = createBuildNotes(buildNotesFile, vars.expand(buildNotes), entries);
         ur.lists = vars.expand(lists);
@@ -308,17 +315,34 @@ public class TestflightRecorder extends Recorder {
         return null;
     }
 
+    private List<Entry> getChangeSetEntries(AbstractBuild<?, ?> build) {
+        ArrayList<Entry> entries = new ArrayList<Entry>();
+        ChangeLogSet<?> changeSet = build.getChangeSet();
+        for (Entry entry : changeSet) {
+            entries.add(entry);
+        }
+        return entries;
+    }
+
     private List<Entry> getChangeSetEntriesSinceLastSuccess(AbstractBuild<?, ?> build) {
         ArrayList<Entry> entries = new ArrayList<Entry>();
 
-        do {
-            ChangeLogSet<?> changeSet = build.getChangeSet();
-
-            for (Entry entry : changeSet) {
-                entries.add(entry);
+        //The next build after the last successful one should either be a failure, or the current build.
+        //It could be in progress I guess, but we should probably just append the changelog anyway.
+        AbstractBuild<?, ?> lastBuild = build.getPreviousSuccessfulBuild().getNextBuild();
+        while(lastBuild != null) {
+            if(lastBuild.hasChangeSetComputed()) {
+                ChangeLogSet<?> changeSet = lastBuild.getChangeSet();
+                for (Entry entry : changeSet) {
+                    entries.add(entry);
+                }
             }
-            build = build.getPreviousBuild();
-        } while (build.getResult().isWorseThan(Result.SUCCESS));
+            lastBuild = lastBuild.getNextBuild();
+
+            if(lastBuild.equals(build))
+                break;
+        }
+
         return entries;
     }
 
