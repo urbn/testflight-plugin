@@ -294,18 +294,27 @@ public class TestflightRecorder extends Recorder {
 
         //The next build after the last successful one should either be a failure, or the current build.
         //It could be in progress I guess, but we should probably just append the changelog anyway.
-        AbstractBuild<?, ?> lastBuild = build.getPreviousSuccessfulBuild().getNextBuild();
+        AbstractBuild<?, ?> lastBuild = build.getPreviousSuccessfulBuild();
+        if(lastBuild != null) {
+            lastBuild = lastBuild.getNextBuild();
+        }
+        else {
+            return getChangeSetEntries(build);
+        }
+
         while(lastBuild != null) {
-            if(lastBuild.hasChangeSetComputed()) {
-                ChangeLogSet<?> changeSet = lastBuild.getChangeSet();
+
+            ChangeLogSet<?> changeSet = lastBuild.getChangeSet();
+            if(changeSet != null) {
                 for (Entry entry : changeSet) {
                     entries.add(entry);
                 }
             }
-            lastBuild = lastBuild.getNextBuild();
 
             if(lastBuild.equals(build))
                 break;
+
+            lastBuild = lastBuild.getNextBuild();
         }
 
         return entries;
