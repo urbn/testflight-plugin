@@ -285,19 +285,21 @@ public class TestflightRecorder extends Recorder {
     }
 
     private File getBuildNotesFile(EnvVars vars, String buildNotesPath) {
-        buildNotesPath = vars.expand(buildNotesPath);
-        File buildNotesFile = new File(buildNotesPath);
-        if(buildNotesFile.exists()) {
-            return buildNotesFile;
-        }
-        else {
-            buildNotesFile = new File(vars.expand("$WORKSPACE"), buildNotesPath);
-            if (buildNotesFile.exists()) {
+        if(buildNotesPath != null && !buildNotesPath.isEmpty()) {
+            buildNotesPath = vars.expand(buildNotesPath);
+            File buildNotesFile = new File(buildNotesPath);
+            if(buildNotesFile.exists()) {
                 return buildNotesFile;
+            }
+            else {
+                buildNotesFile = new File(vars.expand("$WORKSPACE"), buildNotesPath);
+                if (buildNotesFile.exists()) {
+                    return buildNotesFile;
+                }
             }
         }
 
-        buildNotesFile = new File(vars.expand("$WORKSPACE"),"BUILD_NOTES");
+        File buildNotesFile = new File(vars.expand("$WORKSPACE"),"BUILD_NOTES");
         if (buildNotesFile.exists()) {
             return buildNotesFile;
         }
