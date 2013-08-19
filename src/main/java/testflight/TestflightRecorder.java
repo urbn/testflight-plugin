@@ -17,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import hudson.model.Hudson;
 
+import java.io.File;
 import java.util.*;
 
 import net.sf.json.JSONObject;
@@ -55,6 +56,13 @@ public class TestflightRecorder extends Recorder {
     public String getBuildNotes() {
         return this.buildNotes;
     }
+
+    private String buildNotesPath;
+
+    public String getBuildNotesPath() {
+        return this.buildNotesPath;
+    }
+
 
     private boolean appendChangelog;
 
@@ -131,12 +139,13 @@ public class TestflightRecorder extends Recorder {
     }
     
     @DataBoundConstructor
-    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotes, Boolean appendChangelog, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
+    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotes, String buildNotesPath, Boolean appendChangelog, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
         this.tokenPairName = tokenPairName;
         this.apiToken = apiToken;
         this.teamToken = teamToken;
         this.notifyTeam = notifyTeam;
         this.buildNotes = buildNotes;
+        this.buildNotesPath = buildNotesPath;
         this.appendChangelog = appendChangelog;
         this.filePath = filePath;
         this.dsymPath = dsymPath;
@@ -258,7 +267,7 @@ public class TestflightRecorder extends Recorder {
         ur.dsymPath = vars.expand(StringUtils.trim(team.getDsymPath()));
         ur.apiToken = vars.expand(Secret.toString(tokenPair.getApiToken()));
         List<Entry> entries = getChangeSetEntriesSinceLastSuccess(build);
-        ur.buildNotes = createBuildNotes(vars.expand(buildNotes), entries);
+        ur.buildNotes = createBuildNotes(buildNotesPath != null ? vars.expand("$WORKSPACE/"+buildNotesPath) : null, vars.expand(buildNotes), entries);
         ur.lists = vars.expand(lists);
         ur.notifyTeam = notifyTeam;
         ProxyConfiguration proxy = getProxy();
@@ -300,7 +309,13 @@ public class TestflightRecorder extends Recorder {
     }
 
     // Append the changelog if we should and can
-    private String createBuildNotes(String buildNotes, final List<Entry> changeSet) {
+    private String createBuildNotes(String buildNotesPath, String buildNotes, final List<Entry> changeSet) {
+        if(buildNotesPath != null) {
+            File buildNotesFile = new File(buildNotesPath);
+
+        }
+
+
         if (appendChangelog) {
             StringBuilder stringBuilder = new StringBuilder();
 
