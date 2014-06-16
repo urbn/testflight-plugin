@@ -16,7 +16,7 @@ public class TestflightUploaderMain {
     }
 
     private static void upload(String[] args) throws Exception {
-        TestflightUploader uploader = new TestflightUploader();
+        TestflightUploader uploader = new TestflightUploader(null, false);
         uploader.setLogger(new TestflightUploader.Logger() {
             public void logDebug(String message) {
                 System.out.println(message);

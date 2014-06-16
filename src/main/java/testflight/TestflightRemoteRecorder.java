@@ -29,16 +29,18 @@ public class TestflightRemoteRecorder implements Callable<Object, Throwable>, Se
     final private TestflightUploader.UploadRequest uploadRequest;
     final private BuildListener listener;
     final private EnvVars vars;
+    final private boolean appendChangeLog;
 
-    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener, EnvVars vars) {
+    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener, EnvVars vars, boolean appendChangeLog) {
         this.remoteWorkspace = remoteWorkspace;
         this.uploadRequest = uploadRequest;
         this.listener = listener;
         this.vars = vars;
+        this.appendChangeLog = appendChangeLog;
     }
 
     public Object call() throws Throwable {
-        TestflightUploader uploader = new TestflightUploader(vars);
+        TestflightUploader uploader = new TestflightUploader(vars, this.appendChangeLog);
         if (uploadRequest.debug != null && uploadRequest.debug) {
             uploader.setLogger(new TestflightUploader.Logger() {
                 public void logDebug(String message) {

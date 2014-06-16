@@ -1,6 +1,8 @@
 package testflight;
 
 import hudson.EnvVars;
+import hudson.scm.ChangeLogSet;
+import hudson.model.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -21,6 +23,11 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -33,9 +40,11 @@ public class TestflightUploader implements Serializable {
     }
 
     private EnvVars vars;
+    private boolean appendChangelog;
 
-    TestflightUploader(EnvVars vars){
+    TestflightUploader(EnvVars vars, boolean appendChangeLog){
         this.vars = vars;
+        this.appendChangelog = appendChangeLog;
     }
 
     static class UploadRequest implements Serializable {
@@ -192,6 +201,44 @@ public class TestflightUploader implements Serializable {
         }
 
         return null;
+    }
+
+    // Append the changelog if we should and can
+    private String createBuildNotes(File buildNotesFile, String buildNotes, final List<ChangeLogSet.Entry> changeSet) {
+        if(buildNotesFile != null) {
+            try {
+                String fileContents = FileUtils.readFileToString(buildNotesFile, "UTF-8");
+                buildNotes = fileContents + "\n\n" + buildNotes;
+            } catch (FileNotFoundException e) {
+                //the file should have been checked if it exists, but if not, just ignore it.
+            } catch (IOException e) {
+                //ignore it
+            }
+        }
+
+
+        if (appendChangelog) {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            // Show the build notes first
+            stringBuilder.append(buildNotes);
+
+            // Then append the changelog
+            stringBuilder.append("\n\n")
+                    .append(changeSet.isEmpty() ? Messages.TestflightRecorder_EmptyChangeSet() : Messages.TestflightRecorder_Changelog())
+                    .append("\n");
+
+            int entryNumber = 1;
+
+            for (ChangeLogSet.Entry entry : changeSet) {
+                stringBuilder.append("\n").append(entryNumber).append(". ");
+                stringBuilder.append(entry.getMsg()).append(" \u2014 ").append(entry.getAuthor());
+
+                entryNumber++;
+            }
+            buildNotes = stringBuilder.toString();
+        }
+        return buildNotes;
     }
 
     private void logDebug(String message) {
