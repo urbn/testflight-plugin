@@ -1,5 +1,6 @@
 package testflight;
 
+import hudson.EnvVars;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -28,6 +29,12 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 public class TestflightUploader implements Serializable {
     static interface Logger {
         void logDebug(String message);
+    }
+
+    private EnvVars vars;
+
+    TestflightUploader(EnvVars vars){
+        this.vars = vars;
     }
 
     static class UploadRequest implements Serializable {
