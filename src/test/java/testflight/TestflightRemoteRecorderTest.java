@@ -69,7 +69,7 @@ public class TestflightRemoteRecorderTest {
     public void findMultipleFiles() throws Throwable {
         TestflightUploader.UploadRequest ur = createTestUploadRequest(null);
 
-        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener);
+        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener, null, false, null);
 
         remoteRecorder.uploadWith(uploader);
 
@@ -85,7 +85,7 @@ public class TestflightRemoteRecorderTest {
     public void findFilesWithAbsolutePaths() throws Throwable {
         TestflightUploader.UploadRequest ur = createTestUploadRequest(apk1.getPath());
 
-        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener);
+        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener, null, false, null);
 
         remoteRecorder.uploadWith(uploader);
 
@@ -98,7 +98,7 @@ public class TestflightRemoteRecorderTest {
     public void findFilesWithRelativePaths() throws Throwable {
         TestflightUploader.UploadRequest ur = createTestUploadRequest("a/d/test.apk");
 
-        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener);
+        TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(tmpDir.toString(), ur, listener, null, false, null);
 
         remoteRecorder.uploadWith(uploader);
 
