@@ -42,11 +42,13 @@ public class TestflightUploader implements Serializable {
     private EnvVars vars;
     private boolean appendChangelog;
     private List< ChangeLogSet.Entry > entries;
+    private BuildListener listener;
 
-    TestflightUploader(EnvVars vars, boolean appendChangeLog, List< ChangeLogSet.Entry > entries){
+    TestflightUploader(EnvVars vars, boolean appendChangeLog, List< ChangeLogSet.Entry > entries, BuildListener listener){
         this.vars = vars;
         this.appendChangelog = appendChangeLog;
         this.entries = entries;
+        this.listener = listener;
     }
 
     static class UploadRequest implements Serializable {
@@ -132,9 +134,8 @@ public class TestflightUploader implements Serializable {
         }
 
         //get buildNotes file and read the contents as a string
-        File f = getBuildNotesFile(this.vars, ur.buildNotesPath);
-        //String fileContents = FileUtils.readFileToString(f, "UTF-8");
-        String fileContents = createBuildNotes(f, ur.buildNotes, this.entries);
+        File userBuildNotesFile = getBuildNotesFile(this.vars, ur.buildNotesPath);
+        String fileContents = createBuildNotes(userBuildNotesFile, ur.buildNotes, this.entries);
 
 
         HttpHost targetHost = new HttpHost("testflightapp.com");

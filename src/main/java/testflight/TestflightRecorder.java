@@ -182,7 +182,6 @@ public class TestflightRecorder extends Recorder {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener) {
         if (build.getResult().isWorseOrEqualTo(Result.FAILURE))
             return false;
-
         listener.getLogger().println(Messages.TestflightRecorder_InfoUploading());
 
         try {
