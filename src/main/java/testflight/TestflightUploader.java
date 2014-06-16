@@ -42,6 +42,7 @@ public class TestflightUploader implements Serializable {
         String dsymPath;
         String apiToken;
         String teamToken;
+        String buildNotesPath;
         Boolean notifyTeam;
         String buildNotes;
         File file;
@@ -60,6 +61,7 @@ public class TestflightUploader implements Serializable {
                     .append("dsymPath", dsymPath)
                     .append("apiToken", "********")
                     .append("teamToken", "********")
+                    .append("buildNotesPath", buildNotesPath)
                     .append("notifyTeam", notifyTeam)
                     .append("buildNotes", buildNotes)
                     .append("file", file)
@@ -80,6 +82,7 @@ public class TestflightUploader implements Serializable {
             r2.dsymPath = r.dsymPath;
             r2.apiToken = r.apiToken;
             r2.teamToken = r.teamToken;
+            r2.buildNotesPath = r.buildNotesPath;
             r2.notifyTeam = r.notifyTeam;
             r2.buildNotes = r.buildNotes;
             r2.file = r.file;
