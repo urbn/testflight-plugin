@@ -1,6 +1,7 @@
 package testflight;
 
 import hudson.EnvVars;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -119,6 +120,10 @@ public class TestflightUploader implements Serializable {
             httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
         }
 
+        //get buildNotes file and read the contents as a string
+        File f = getBuildNotesFile(this.vars, ur.buildNotesPath);
+        String fileContents = FileUtils.readFileToString(f, "UTF-8");
+
         HttpHost targetHost = new HttpHost("testflightapp.com");
         HttpPost httpPost = new HttpPost("/api/builds.json");
         FileBody fileBody = new FileBody(ur.file);
@@ -126,7 +131,7 @@ public class TestflightUploader implements Serializable {
         MultipartEntity entity = new MultipartEntity();
         entity.addPart("api_token", new StringBody(ur.apiToken));
         entity.addPart("team_token", new StringBody(ur.teamToken));
-        entity.addPart("notes", new StringBody(ur.buildNotes, "text/plain", Charset.forName("UTF-8")));
+        entity.addPart("notes", new StringBody(fileContents, "text/plain", Charset.forName("UTF-8")));
         entity.addPart("file", fileBody);
 
         if (ur.dsymFile != null) {
@@ -164,6 +169,29 @@ public class TestflightUploader implements Serializable {
         JSONParser parser = new JSONParser();
 
         return (Map) parser.parse(json);
+    }
+
+    private File getBuildNotesFile(EnvVars vars, String buildNotesPath) {
+        if(buildNotesPath != null && !buildNotesPath.isEmpty()) {
+            buildNotesPath = vars.expand(buildNotesPath);
+            File buildNotesFile = new File(buildNotesPath);
+            if(buildNotesFile.exists()) {
+                return buildNotesFile;
+            }
+            else {
+                buildNotesFile = new File(vars.expand("$WORKSPACE"), buildNotesPath);
+                if (buildNotesFile.exists()) {
+                    return buildNotesFile;
+                }
+            }
+        }
+
+        File buildNotesFile = new File(vars.expand("$WORKSPACE"),"BUILD_NOTES");
+        if (buildNotesFile.exists()) {
+            return buildNotesFile;
+        }
+
+        return null;
     }
 
     private void logDebug(String message) {
