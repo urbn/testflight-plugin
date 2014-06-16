@@ -177,7 +177,7 @@ public class TestflightRecorder extends Recorder {
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
-
+    private BuildListener listener;
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener) {
         if (build.getResult().isWorseOrEqualTo(Result.FAILURE))
@@ -193,6 +193,7 @@ public class TestflightRecorder extends Recorder {
 
             for(TestflightTeam team : createDefaultPlusAdditionalTeams()) {
                 try {
+                    this.listener = listener;
                     TestflightUploader.UploadRequest ur = createPartialUploadRequest(team, vars, build);
                     urList.add(ur);
                 } catch (MisconfiguredJobException mje) {
@@ -205,9 +206,9 @@ public class TestflightRecorder extends Recorder {
                 List<Entry> entries = combineChangelogSinceLastSuccess ? getChangeSetEntriesSinceLastSuccess(build) : getChangeSetEntries(build);
 
                 TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(workspace, ur, listener, vars, this.appendChangelog, entries);
-    
+
                 final List<Map> parsedMaps;
-    
+
                 try {
                     Object result = launcher.getChannel().call(remoteRecorder);
                     parsedMaps = (List<Map>) result;
@@ -279,7 +280,7 @@ public class TestflightRecorder extends Recorder {
         ur.apiToken = vars.expand(Secret.toString(tokenPair.getApiToken()));
         List<Entry> entries = combineChangelogSinceLastSuccess ? getChangeSetEntriesSinceLastSuccess(build) : getChangeSetEntries(build);
         File buildNotesFile = getBuildNotesFile(vars, buildNotesPath);
-        ur.buildNotes = createBuildNotes(buildNotesFile, vars.expand(buildNotes), entries);
+        ur.buildNotes = this.buildNotes;
         ur.buildNotesPath = this.buildNotesPath;
         ur.lists = vars.expand(lists);
         ur.notifyTeam = notifyTeam;
