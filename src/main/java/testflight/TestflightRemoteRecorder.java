@@ -15,9 +15,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import hudson.scm.ChangeLogSet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.commons.io.FilenameUtils;
+
 
 /**
  * Code for sending a build to TestFlight which can run on a master or slave.
@@ -30,17 +32,19 @@ public class TestflightRemoteRecorder implements Callable<Object, Throwable>, Se
     final private BuildListener listener;
     final private EnvVars vars;
     final private boolean appendChangeLog;
+    final private List< ChangeLogSet.Entry > entries;
 
-    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener, EnvVars vars, boolean appendChangeLog) {
+    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener, EnvVars vars, boolean appendChangeLog, List<ChangeLogSet.Entry> entries) {
         this.remoteWorkspace = remoteWorkspace;
         this.uploadRequest = uploadRequest;
         this.listener = listener;
         this.vars = vars;
         this.appendChangeLog = appendChangeLog;
+        this.entries = entries;
     }
 
     public Object call() throws Throwable {
-        TestflightUploader uploader = new TestflightUploader(vars, this.appendChangeLog);
+        TestflightUploader uploader = new TestflightUploader(vars, this.appendChangeLog, entries);
         if (uploadRequest.debug != null && uploadRequest.debug) {
             uploader.setLogger(new TestflightUploader.Logger() {
                 public void logDebug(String message) {
