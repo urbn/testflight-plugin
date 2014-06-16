@@ -1,5 +1,6 @@
 package testflight;
 
+import hudson.EnvVars;
 import hudson.model.BuildListener;
 import hudson.remoting.Callable;
 import hudson.Util;
@@ -28,7 +29,7 @@ public class TestflightRemoteRecorder implements Callable<Object, Throwable>, Se
     final private TestflightUploader.UploadRequest uploadRequest;
     final private BuildListener listener;
 
-    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener) {
+    public TestflightRemoteRecorder(String remoteWorkspace, TestflightUploader.UploadRequest uploadRequest, BuildListener listener, EnvVars vars) {
         this.remoteWorkspace = remoteWorkspace;
         this.uploadRequest = uploadRequest;
         this.listener = listener;

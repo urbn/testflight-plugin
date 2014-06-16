@@ -203,7 +203,7 @@ public class TestflightRecorder extends Recorder {
             }
 
             for(TestflightUploader.UploadRequest ur : urList) {
-                TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(workspace, ur, listener);
+                TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(workspace, ur, listener, vars);
     
                 final List<Map> parsedMaps;
     
