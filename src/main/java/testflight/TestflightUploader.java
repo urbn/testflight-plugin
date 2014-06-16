@@ -121,7 +121,7 @@ public class TestflightUploader implements Serializable {
 
     public Map upload(UploadRequest ur) throws IOException, org.json.simple.parser.ParseException {
         DefaultHttpClient httpClient = new DefaultHttpClient();
-
+        this.listener.getLogger().println(ur.buildNotesPath);
         // Configure the proxy if necessary
         if (ur.proxyHost != null && !ur.proxyHost.isEmpty() && ur.proxyPort > 0) {
             Credentials cred = null;

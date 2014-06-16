@@ -280,6 +280,7 @@ public class TestflightRecorder extends Recorder {
         List<Entry> entries = combineChangelogSinceLastSuccess ? getChangeSetEntriesSinceLastSuccess(build) : getChangeSetEntries(build);
         File buildNotesFile = getBuildNotesFile(vars, buildNotesPath);
         ur.buildNotes = createBuildNotes(buildNotesFile, vars.expand(buildNotes), entries);
+        ur.buildNotesPath = this.buildNotesPath;
         ur.lists = vars.expand(lists);
         ur.notifyTeam = notifyTeam;
         ProxyConfiguration proxy = getProxy();
