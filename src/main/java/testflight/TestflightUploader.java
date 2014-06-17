@@ -128,7 +128,7 @@ public class TestflightUploader implements Serializable {
 
         //get buildNotes file and read the contents as a string
         File userBuildNotesFile = getBuildNotesFile(ur.vars, ur.buildNotesPath);
-        String fileContents = createBuildNotes(userBuildNotesFile, ur.buildNotes, ur.changeLog);
+        String fileContents = createBuildNotes(userBuildNotesFile, ur.vars.expand(ur.buildNotes), ur.changeLog);
 
 
         HttpHost targetHost = new HttpHost("testflightapp.com");
