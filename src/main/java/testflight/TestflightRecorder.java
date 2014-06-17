@@ -141,14 +141,14 @@ public class TestflightRecorder extends Recorder {
         return this.debug;
     }
 
-    private TestflightTeam [] additionalTeams;
-    
-    public TestflightTeam [] getAdditionalTeams() {
+    private TestflightTeam[] additionalTeams;
+
+    public TestflightTeam[] getAdditionalTeams() {
         return this.additionalTeams;
     }
-    
+
     @DataBoundConstructor
-    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotesPath, String buildNotes, Boolean appendChangelog, Boolean combineChangelogSinceLastSuccess, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam [] additionalTeams) {
+    public TestflightRecorder(String tokenPairName, Secret apiToken, Secret teamToken, Boolean notifyTeam, String buildNotesPath, String buildNotes, Boolean appendChangelog, Boolean combineChangelogSinceLastSuccess, String filePath, String dsymPath, String lists, Boolean replace, String proxyHost, String proxyUser, String proxyPass, int proxyPort, Boolean debug, TestflightTeam[] additionalTeams) {
         this.tokenPairName = tokenPairName;
         this.apiToken = apiToken;
         this.teamToken = teamToken;
@@ -177,6 +177,7 @@ public class TestflightRecorder extends Recorder {
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
+
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener) {
         if (build.getResult().isWorseOrEqualTo(Result.FAILURE))
@@ -190,7 +191,7 @@ public class TestflightRecorder extends Recorder {
 
             List<TestflightUploader.UploadRequest> urList = new ArrayList<TestflightUploader.UploadRequest>();
 
-            for(TestflightTeam team : createDefaultPlusAdditionalTeams()) {
+            for (TestflightTeam team : createDefaultPlusAdditionalTeams()) {
                 try {
                     TestflightUploader.UploadRequest ur = createPartialUploadRequest(team, vars, build);
                     urList.add(ur);
@@ -200,10 +201,10 @@ public class TestflightRecorder extends Recorder {
                 }
             }
 
-            for(TestflightUploader.UploadRequest ur : urList) {
+            for (TestflightUploader.UploadRequest ur : urList) {
                 List<Entry> entries = combineChangelogSinceLastSuccess ? getChangeSetEntriesSinceLastSuccess(build) : getChangeSetEntries(build);
 
-                TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(workspace, ur, listener, vars, this.appendChangelog, entries);
+                TestflightRemoteRecorder remoteRecorder = new TestflightRemoteRecorder(workspace, ur, listener);
 
                 final List<Map> parsedMaps;
 
@@ -215,12 +216,12 @@ public class TestflightRecorder extends Recorder {
                     listener.getLogger().println(ue.getResponseBody());
                     return false;
                 }
-    
+
                 if (parsedMaps.size() == 0) {
                     listener.getLogger().println(Messages.TestflightRecorder_NoUploadedFile(ur.filePaths));
                     return false;
                 }
-                for (Map parsedMap: parsedMaps) {
+                for (Map parsedMap : parsedMaps) {
                     addTestflightLinks(build, listener, parsedMap);
                 }
             }
@@ -237,7 +238,7 @@ public class TestflightRecorder extends Recorder {
         List<TestflightTeam> allTeams = new ArrayList<TestflightTeam>();
         // first team is default
         allTeams.add(new TestflightTeam(getTokenPairName(), getFilePath(), getDsymPath()));
-        if(additionalTeams != null) {
+        if (additionalTeams != null) {
             allTeams.addAll(Arrays.asList(additionalTeams));
         }
         return allTeams;
@@ -290,7 +291,35 @@ public class TestflightRecorder extends Recorder {
         ur.replace = replace;
         ur.teamToken = vars.expand(Secret.toString(tokenPair.getTeamToken()));
         ur.debug = debug;
+        ur.vars = vars;
+        ur.changeLog = getChangeLog(entries);
         return ur;
+    }
+
+    private String getChangeLog(List<Entry> entries) {
+
+        String changeLog = "";
+        if(appendChangelog)
+
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            // Then append the changelog
+            stringBuilder.append("\n\n")
+              .append(entries.isEmpty() ? Messages.TestflightRecorder_EmptyChangeSet() : Messages.TestflightRecorder_Changelog())
+              .append("\n");
+            stringBuilder.append(changeLog);
+            int entryNumber = 1;
+
+            for (ChangeLogSet.Entry entry : entries) {
+                stringBuilder.append("\n").append(entryNumber).append(". ");
+                stringBuilder.append(entry.getMsg()).append(" \u2014 ").append(entry.getAuthor());
+
+                entryNumber++;
+            }
+            changeLog = stringBuilder.toString();
+        }
+        return changeLog;
     }
 
     private File getBuildNotesFile(EnvVars vars, String buildNotesPath) {
@@ -385,9 +414,6 @@ public class TestflightRecorder extends Recorder {
 
         if (appendChangelog) {
             StringBuilder stringBuilder = new StringBuilder();
-
-            // Show the build notes first
-            stringBuilder.append(buildNotes);
 
             // Then append the changelog
             stringBuilder.append("\n\n")

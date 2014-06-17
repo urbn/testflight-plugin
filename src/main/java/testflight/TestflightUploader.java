@@ -39,17 +39,8 @@ public class TestflightUploader implements Serializable {
         void logDebug(String message);
     }
 
-    private EnvVars vars;
-    private boolean appendChangelog;
-    private List< ChangeLogSet.Entry > entries;
-
-    TestflightUploader(EnvVars vars, boolean appendChangeLog, List< ChangeLogSet.Entry > entries){
-        this.vars = vars;
-        this.appendChangelog = appendChangeLog;
-        this.entries = entries;
-    }
-
     static class UploadRequest implements Serializable {
+        EnvVars vars;
         String filePaths;
         String dsymPath;
         String apiToken;
@@ -66,9 +57,11 @@ public class TestflightUploader implements Serializable {
         String proxyPass;
         int proxyPort;
         Boolean debug;
+        String changeLog;
 
         public String toString() {
             return new ToStringBuilder(this)
+                    .append("vars", vars.toString())
                     .append("filePaths", filePaths)
                     .append("dsymPath", dsymPath)
                     .append("apiToken", "********")
@@ -85,11 +78,13 @@ public class TestflightUploader implements Serializable {
                     .append("proxyPass", "********")
                     .append("proxyPort", proxyPort)
                     .append("debug", debug)
+                    .append("changeLog", changeLog)
                     .toString();
         }
 
         static UploadRequest copy(UploadRequest r) {
             UploadRequest r2 = new UploadRequest();
+            r2.vars = r.vars;
             r2.filePaths = r.filePaths;
             r2.dsymPath = r.dsymPath;
             r2.apiToken = r.apiToken;
@@ -106,6 +101,7 @@ public class TestflightUploader implements Serializable {
             r2.proxyPort = r.proxyPort;
             r2.proxyPass = r.proxyPass;
             r2.debug = r.debug;
+            r2.changeLog = r.changeLog;
 
             return r2;
         }
@@ -131,8 +127,8 @@ public class TestflightUploader implements Serializable {
         }
 
         //get buildNotes file and read the contents as a string
-        File userBuildNotesFile = getBuildNotesFile(this.vars, ur.buildNotesPath);
-        String fileContents = createBuildNotes(userBuildNotesFile, ur.buildNotes, this.entries);
+        File userBuildNotesFile = getBuildNotesFile(ur.vars, ur.buildNotesPath);
+        String fileContents = createBuildNotes(userBuildNotesFile, ur.buildNotes, ur.changeLog);
 
 
         HttpHost targetHost = new HttpHost("testflightapp.com");
@@ -206,7 +202,7 @@ public class TestflightUploader implements Serializable {
     }
 
     // Append the changelog if we should and can
-    private String createBuildNotes(File buildNotesFile, String buildNotes, final List<ChangeLogSet.Entry> changeSet) {
+    private String createBuildNotes(File buildNotesFile, String buildNotes, String changeLog) {
         if(buildNotesFile != null) {
             try {
                 String fileContents = FileUtils.readFileToString(buildNotesFile, "UTF-8");
@@ -218,28 +214,16 @@ public class TestflightUploader implements Serializable {
             }
         }
 
+        StringBuilder stringBuilder = new StringBuilder();
 
-        if (appendChangelog) {
-            StringBuilder stringBuilder = new StringBuilder();
+        // Show the build notes first
+        stringBuilder.append(buildNotes);
 
-            // Show the build notes first
-            stringBuilder.append(buildNotes);
+        // Then append the changelog
+        stringBuilder.append("\n\n");
+        stringBuilder.append(changeLog);
 
-            // Then append the changelog
-            stringBuilder.append("\n\n")
-                    .append(changeSet.isEmpty() ? Messages.TestflightRecorder_EmptyChangeSet() : Messages.TestflightRecorder_Changelog())
-                    .append("\n");
-
-            int entryNumber = 1;
-
-            for (ChangeLogSet.Entry entry : changeSet) {
-                stringBuilder.append("\n").append(entryNumber).append(". ");
-                stringBuilder.append(entry.getMsg()).append(" \u2014 ").append(entry.getAuthor());
-
-                entryNumber++;
-            }
-            buildNotes = stringBuilder.toString();
-        }
+        buildNotes = stringBuilder.toString();
         return buildNotes;
     }
 
