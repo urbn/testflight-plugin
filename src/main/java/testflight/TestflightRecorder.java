@@ -177,7 +177,6 @@ public class TestflightRecorder extends Recorder {
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
-    private BuildListener listener;
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener) {
         if (build.getResult().isWorseOrEqualTo(Result.FAILURE))
@@ -193,7 +192,6 @@ public class TestflightRecorder extends Recorder {
 
             for(TestflightTeam team : createDefaultPlusAdditionalTeams()) {
                 try {
-                    this.listener = listener;
                     TestflightUploader.UploadRequest ur = createPartialUploadRequest(team, vars, build);
                     urList.add(ur);
                 } catch (MisconfiguredJobException mje) {

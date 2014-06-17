@@ -42,13 +42,11 @@ public class TestflightUploader implements Serializable {
     private EnvVars vars;
     private boolean appendChangelog;
     private List< ChangeLogSet.Entry > entries;
-    private BuildListener listener;
 
-    TestflightUploader(EnvVars vars, boolean appendChangeLog, List< ChangeLogSet.Entry > entries, BuildListener listener){
+    TestflightUploader(EnvVars vars, boolean appendChangeLog, List< ChangeLogSet.Entry > entries){
         this.vars = vars;
         this.appendChangelog = appendChangeLog;
         this.entries = entries;
-        this.listener = listener;
     }
 
     static class UploadRequest implements Serializable {
@@ -121,7 +119,6 @@ public class TestflightUploader implements Serializable {
 
     public Map upload(UploadRequest ur) throws IOException, org.json.simple.parser.ParseException {
         DefaultHttpClient httpClient = new DefaultHttpClient();
-        this.listener.getLogger().println(ur.buildNotesPath);
         // Configure the proxy if necessary
         if (ur.proxyHost != null && !ur.proxyHost.isEmpty() && ur.proxyPort > 0) {
             Credentials cred = null;
